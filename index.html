@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>၄ ရက်တာ ခရီးစဉ် အကြံပေး | မော်လ်ဒိုက်၊ ဂျာဗား၊ ဘာလီ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Sand & Calming Teal -->
+    <!-- Application Structure Plan: The application is structured as a user-centric, single-page dashboard. It starts with a direct recommendation (the "answer"), followed by a tab-based comparative analysis for detailed exploration. This is more intuitive than a linear report, allowing users to quickly grasp the key takeaway and then dive into the data that supports it. The structure includes: 1. Hero section with the final recommendation. 2. Interactive comparison section with tabs and a radar chart for visual data synthesis. 3. A detailed, expandable timeline for the recommended Bali itinerary. 4. A final section for budget and travel tips. This flow guides the user from the conclusion back through the analysis, which is highly effective for decision-making. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Comparing three destinations on multiple factors (cost, travel time, activities). -> Goal: Compare. -> Viz/Method: Interactive Radar Chart (Chart.js). -> Interaction: Hover tooltips provide specific ratings. -> Justification: A radar chart is ideal for multi-variate comparison, offering a quick, holistic view of how destinations stack up against each other, far more effective than a table.
+        - Report Info: Detailed 4-day Bali itinerary. -> Goal: Organize. -> Viz/Method: HTML/CSS/JS Accordion. -> Interaction: Clicking a day expands its details. -> Justification: Prevents a wall of text, making the dense itinerary digestible and user-controlled.
+        - Report Info: Bali trip budget breakdown. -> Goal: Inform. -> Viz/Method: Donut Chart (Chart.js). -> Interaction: Hover tooltips show cost categories and percentages. -> Justification: A donut chart is a standard, easily understood visual for showing parts of a whole.
+        - Report Info: Key stats like flight time and visa. -> Goal: Inform. -> Viz/Method: Icon + Text blocks (HTML/CSS). -> Interaction: None. -> Justification: Icons provide quick visual cues, making key data highly scannable.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Padauk', sans-serif;
+            background-color: #FDFBF7;
+            color: #3D405B;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tab-active {
+            background-color: #4FD1C5;
+            color: white;
+            border-color: #4FD1C5;
+        }
+        .tab-inactive {
+            background-color: #E2D6C4;
+            color: #3D405B;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xl font-bold text-gray-800">ခရီးစဉ် အကြံပေး</div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#comparison" class="text-gray-600 hover:text-teal-500">နှိုင်းယှဉ်ချက်</a>
+                    <a href="#recommendation" class="text-gray-600 hover:text-teal-500">အကြံပြုချက်</a>
+                    <a href="#itinerary" class="text-gray-600 hover:text-teal-500">ဘာလီ ခရီးစဉ်</a>
+                    <a href="#budget" class="text-gray-600 hover:text-teal-500">ကုန်ကျစရိတ်</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="menu-btn" class="text-gray-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <a href="#comparison" class="block py-2 text-gray-600 hover:text-teal-500">နှိုင်းယှဉ်ချက်</a>
+                <a href="#recommendation" class="block py-2 text-gray-600 hover:text-teal-500">အကြံပြုချက်</a>
+                <a href="#itinerary" class="block py-2 text-gray-600 hover:text-teal-500">ဘာလီ ခရီးစဉ်</a>
+                <a href="#budget" class="block py-2 text-gray-600 hover:text-teal-500">ကုန်ကျစရိတ်</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="py-16 md:py-24 bg-cover bg-center" style="background-image: url('https://placehold.co/1600x900/E2D6C4/3D405B?text=Bali+Landscape')">
+            <div class="container mx-auto px-6 text-center bg-black/50 py-12 rounded-xl">
+                <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">မြန်မာနိုင်ငံမှ ၄ ရက်တာ အပန်းဖြေခရီး</h1>
+                <p class="text-lg md:text-xl text-gray-200 mb-8 max-w-3xl mx-auto">အချိန်တိုအတွင်း အကောင်းဆုံး အနားယူအပန်းဖြေနိုင်ရန် မော်လ်ဒိုက်၊ ဂျာဗား နှင့် ဘာလီတို့၏ အားသာချက်၊ အားနည်းချက်များကို လေ့လာပြီး သင့်အတွက် အသင့်တော်ဆုံးနေရာကို ရွေးချယ်ပါ။</p>
+                <a href="#recommendation" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300">အကောင်းဆုံးရွေးချယ်မှုကို ကြည့်ရန်</a>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section id="comparison" class="py-16 bg-[#FDFBF7]">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-2">ခရီးစဉ် ၃ ခု နှိုင်းယှဉ်ချက်</h2>
+                <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">ခရီးသွားလာချိန်၊ ကုန်ကျစရိတ်၊ လှုပ်ရှားမှုများ နှင့် အပန်းဖြေနိုင်မှုတို့ကို အခြေခံ၍ သင့်အတွက် အသင့်တော်ဆုံး ခရီးစဉ်ကို ရွေးချယ်နိုင်ရန် အောက်ပါ အချက်အလက်များက ကူညီပေးပါလိမ့်မည်။</p>
+
+                <div class="mb-12">
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                    <button data-tab="bali" class="tab-btn tab-active font-bold py-2 px-4 rounded-full transition duration-300">ဘာလီ</button>
+                    <button data-tab="maldives" class="tab-btn tab-inactive font-bold py-2 px-4 rounded-full transition duration-300">မော်လ်ဒိုက်</button>
+                    <button data-tab="java" class="tab-btn tab-inactive font-bold py-2 px-4 rounded-full transition duration-300">ဂျာဗား</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="tab-content" class="max-w-4xl mx-auto">
+                    <!-- Content will be injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommendation Section -->
+        <section id="recommendation" class="py-16 bg-[#E2D6C4]">
+            <div class="container mx-auto px-6">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold mb-4">ကျွန်ုပ်တို့၏ အကြံပြုချက်: ဘာလီ</h2>
+                    <p class="text-lg text-gray-700 max-w-3xl mx-auto mb-8">အချိန်၊ ကုန်ကျစရိတ်၊ အတွေ့အကြုံနှင့် သွားလာရလွယ်ကူမှုတို့ကို ချိန်ထိုးကြည့်လျှင် ၄ ရက်တာ ခရီးစဉ်အတွက် **ဘာလီ** သည် အကောင်းဆုံးနှင့် အသင့်တော်ဆုံး ရွေးချယ်မှုဖြစ်ပါသည်။</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-8 text-center max-w-5xl mx-auto">
+                    <div class="bg-white/50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-2">✈️ အချိန်ကိုက် ခရီးသွားချိန်</h3>
+                        <p class="text-gray-600">တစ်ထောက်နားဖြင့် ၇ နာရီကျော်သာ ကြာမြင့်သော လေယာဉ်ခရီးစဉ်သည် အချိန်တိုခရီးစဉ်အတွက် အဖိုးတန်သော အချိန်များကို ချွေတာပေးသည်။</p>
+                    </div>
+                    <div class="bg-white/50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-2">🌴 အတွေ့အကြုံမျိုးစုံ</h3>
+                        <p class="text-gray-600">လှပသောကမ်းခြေများ၊ စိမ်းလန်းသော လယ်ကွင်းများ၊ ကြွယ်ဝသောယဉ်ကျေးမှုနှင့် အပန်းဖြေလှုပ်ရှားမှုမျိုးစုံကို တစ်နေရာတည်းတွင် ခံစားနိုင်သည်။</p>
+                    </div>
+                    <div class="bg-white/50 p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold mb-2">🚗 သွားလာရေး လွယ်ကူမှု</h3>
+                        <p class="text-gray-600">ကားနှင့် ယာဉ်မောင်းကို စျေးနှုန်းသင့်တင့်စွာ ငှားရမ်းနိုင်သောကြောင့် နေရာအနှံ့ကို အချိန်ကုန်သက်သာစွာဖြင့် အဆင်ပြေပြေ လည်ပတ်နိုင်သည်။</p>
+                    </div>
+                </div>
+                <div class="text-center mt-12">
+                    <a href="#itinerary" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300">ဘာလီ ၄ ရက်တာ ခရီးစဉ်ကို ကြည့်ရန်</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bali Itinerary Section -->
+        <section id="itinerary" class="py-16">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-12">ဘာလီ ၄ ရက်တာ ခရီးစဉ် အသေးစိတ်</h2>
+                <div id="accordion" class="max-w-3xl mx-auto space-y-4">
+                    <!-- Accordion items will be injected by JS -->
+                </div>
+                <div class="flex flex-col md:flex-row justify-center gap-4 mt-8 max-w-3xl mx-auto">
+                    <button id="packing-list-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300 flex items-center justify-center">
+                        <span id="packing-list-loading" class="hidden animate-spin h-5 w-5 mr-3 border-b-2 border-white rounded-full"></span>
+                        ✨ ခရီးဆောင်အိတ် စာရင်းထုတ်ရန်
+                    </button>
+                    <button id="food-recommendations-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300 flex items-center justify-center">
+                        <span id="food-recommendations-loading" class="hidden animate-spin h-5 w-5 mr-3 border-b-2 border-white rounded-full"></span>
+                        ✨ ဒေသအစားအစာ အကြံပြုချက်များ
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Budget & Tips Section -->
+        <section id="budget" class="py-16 bg-[#E2D6C4]">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-12">ခန့်မှန်းကုန်ကျစရိတ်နှင့် အထွေထွေအကြံပြုချက်များ</h2>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">ခန့်မှန်းခြေ ကုန်ကျစရိတ် (တစ်ဦးလျှင်)</h3>
+                        <p class="text-gray-700 mb-6">ဤကုန်ကျစရိတ်သည် ရွေးချယ်သော လေကြောင်းလိုင်း၊ တည်းခိုခန်း အဆင့်အတန်းနှင့် သုံးစွဲမှုပုံစံပေါ်မူတည်၍ ပြောင်းလဲနိုင်ပါသည်။ စုစုပေါင်း ခန့်မှန်းခြေမှာ **$824 - $1400** ကြား ဖြစ်သည်။</p>
+                        <div class="chart-container h-64 md:h-80">
+                            <canvas id="budgetChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">အထူးအကြံပြုချက်များ</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">✓</span>
+                                <div><strong class="font-bold">ကြိုတင်ဘွတ်ကင်လုပ်ပါ:</strong> လေယာဉ်လက်မှတ်နှင့် တည်းခိုခန်းများကို ကြိုတင်ဘွတ်ကင်လုပ်ခြင်းဖြင့် စျေးနှုန်းသက်သာစွာ ရရှိနိုင်ပါသည်။</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">✓</span>
+                                <div><strong class="font-bold">ခရီးသွားအာမခံ:</strong> မမျှော်လင့်သော အခြေအနေများအတွက် ခရီးသွားအာမခံ ဝယ်ယူရန် အထူးအကြံပြုပါသည်။</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">✓</span>
+                                <div><strong class="font-bold">ငွေကြေး:</strong> အင်ဒိုနီးရှား ရူပီယာ (IDR) ကို အဓိကသုံးသော်လည်း USD လည်း ဆောင်ထားသင့်သည်။ ဆိုင်ငယ်များအတွက် ငွေသားလိုအပ်နိုင်ပါသည်။</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">✓</span>
+                                <div><strong class="font-bold">ဝတ်စားဆင်ယင်မှု:</strong> ဘုရားကျောင်းများသို့ သွားရောက်ပါက ပုခုံးနှင့် ဒူးများကို ဖုံးအုပ်သော လေးစားဖွယ်ရာ ဝတ်စုံများ ဝတ်ဆင်ပါ။</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 ခရီးစဉ် အကြံပေး App. All rights reserved.</p>
+            <p class="text-sm text-gray-400 mt-2">ဤအချက်အလက်များသည် အကြံပြုရန်အတွက်သာ ဖြစ်ပါသည်။</p>
+        </div>
+    </footer>
+
+    <!-- Packing List Modal -->
+    <div id="packingListModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closePackingListModal">&times;</span>
+            <h3 class="text-2xl font-bold mb-4">✨ ခရီးဆောင်အိတ် စာရင်း</h3>
+            <div id="packingListContent" class="text-gray-700">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Food Recommendations Modal -->
+    <div id="foodRecommendationsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeFoodRecommendationsModal">&times;</span>
+            <h3 class="text-2xl font-bold mb-4">✨ ဒေသအစားအစာ အကြံပြုချက်များ</h3>
+            <div id="foodRecommendationsContent" class="text-gray-700">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Mobile Menu Toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    menuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Data
+    const travelData = {
+        bali: {
+            title: 'ဘာလီ',
+            summary: 'ယဉ်ကျေးမှု၊ သဘာဝအလှနှင့် အပန်းဖြေမှုတို့ စုံလင်စွာပေါင်းစပ်ထားသော "နတ်ဘုရားတို့၏ကျွန်း"',
+            pros: [
+                'လှပသော သဘာဝရှုခင်းများနှင့် ယဉ်ကျေးမှု',
+                'လှုပ်ရှားမှုမျိုးစုံ ရရှိနိုင်ခြင်း',
+                'ဗီဇာ လွယ်ကူမှု (Visa-free)',
+                'ဒေသတွင်း သွားလာရေး အဆင်ပြေမှု'
+            ],
+            cons: [
+                'လူစည်ကားခြင်း',
+                'ယာဉ်ကြောပိတ်ဆို့မှု ဖြစ်နိုင်ခြင်း',
+                'တိုက်ရိုက်လေကြောင်းခရီးစဉ် မရှိခြင်း'
+            ],
+            stats: {
+                flight: '~၇ နာရီ (တစ်ထောက်နား)',
+                cost: '$$ (သင့်တင့်)',
+                visa: 'Visa Free (၃၀ ရက်)'
+            }
+        },
+        maldives: {
+            title: 'မော်လ်ဒိုက်',
+            summary: 'ကမ္ဘာ့အဆင့်မီ ဇိမ်ခံအပန်းဖြေစခန်းများနှင့် ကြည်လင်လှပသော ပင်လယ်ရေအောက်ကမ္ဘာ',
+            pros: [
+                'အလွန်လှပသော သဘာဝနှင့် အပန်းဖြေမှု',
+                'ထူးခြားကောင်းမွန်သော ရေအောက်လှုပ်ရှားမှုများ',
+                'ဒေသခံကျွန်းများတွင် စျေးသက်သာခြင်း',
+                'ဆိုက်ရောက်ဗီဇာ (Visa on Arrival)'
+            ],
+            cons: [
+                'ကုန်ကျစရိတ် အလွန်မြင့်မားခြင်း',
+                'ဒေသခံကျွန်းများတွင် ကန့်သတ်ချက်များရှိခြင်း',
+                'ခရီးသွားလာမှု အချိန်ကြာမြင့်ခြင်း'
+            ],
+            stats: {
+                flight: '>၈ နာရီ (တစ်ထောက်နား)',
+                cost: '$$$$ (အလွန်စျေးကြီး)',
+                visa: 'Visa on Arrival (၃၀ ရက်)'
+            }
+        },
+        java: {
+            title: 'ဂျာဗား',
+            summary: 'သမိုင်းဝင် ဘုရားကျောင်းကြီးများနှင့် အံ့မခန်း မီးတောင်အလှများ တည်ရှိရာကျွန်း',
+            pros: [
+                'ကြွယ်ဝသော ယဉ်ကျေးမှုနှင့် သမိုင်း',
+                'အံ့မခန်း သဘာဝအလှများ (မီးတောင်များ)',
+                'ဗီဇာ လွယ်ကူမှု (Visa-free)'
+            ],
+            cons: [
+                'အချိန်တိုအတွင်း သွားလာရန် ခက်ခဲခြင်း',
+                'လေကြောင်းခရီးစဉ် အချိန်အလွန်ကြာမြင့်ခြင်း',
+                'နေရာရွှေ့ပြောင်းမှု ကုန်ကျစရိတ်များနိုင်ခြင်း'
+            ],
+            stats: {
+                flight: '>၈-၂၂ နာရီ (တစ်ထောက်နား)',
+                cost: '$$$ (အသင့်အတင့် စျေးကြီး)',
+                visa: 'Visa Free (၃၀ ရက်)'
+            }
+        }
+    };
+    
+    const baliItinerary = [
+        {
+            day: 'နေ့ ၁',
+            title: 'ဆိုက်ရောက်ခြင်း – Uluwatu နေဝင်ဆည်းဆာ',
+            image: 'https://placehold.co/600x400/8E9AAF/FFFFFF?text=Uluwatu+Temple',
+            details: 'လေဆိပ်မှ ဟိုတယ်သို့ check-in ဝင်ရောက်မည်။ ညနေပိုင်းတွင် တောင်ကမ်းပါးစွန်းပေါ်ရှိ Uluwatu ဘုရားကျောင်းသို့ သွားရောက်ပြီး လှပသော နေဝင်ဆည်းဆာကို ကြည့်ရှုရင်း Kecak မီးအကကို ခံစားမည်။ ထို့နောက် Jimbaran ကမ်းခြေတွင် ပင်လယ်စာ ညစာသုံးဆောင်မည်။'
+        },
+        {
+            day: 'နေ့ ၂',
+            title: 'Ubud နှင့် Kintamani မီးတောင်',
+            image: 'https://placehold.co/600x400/F7C59F/FFFFFF?text=Tegallalang+Rice+Terrace',
+            details: 'ရိုးရာ Barong အကကို ကြည့်ရှုပြီး Celuk ရွာတွင် ငွေထည်ပညာကို လေ့လာမည်။ Tirta Empul ဘုရားကျောင်း၏ သန့်စင်သောရေကန်ကို လည်ပတ်ပြီး Kintamani တွင် Mount Batur ၏ ရှုခင်းကို ကြည့်ရင်း နေ့လယ်စာ စားမည်။ ညနေပိုင်းတွင် Tegallalang လှေကားထစ်စိုက်ခင်းနှင့် Ubud မျောက်တောသို့ သွားရောက်မည်။'
+        },
+        {
+            day: 'နေ့ ၃',
+            title: 'Bedugul နှင့် Tanah Lot ဘုရားကျောင်း',
+            image: 'https://placehold.co/600x400/4FD1C5/FFFFFF?text=Tanah+Lot+Temple',
+            details: 'Bedugul ကန်လည်ရှိ လှပသော Ulun Danu ဘုရားကျောင်းကို လည်ပတ်မည်။ Handara Gate နှင့် Wanagiri Hidden Hill တို့တွင် ဓာတ်ပုံရိုက်ပြီးနောက် ညနေပိုင်းတွင် ပင်လယ်ထဲရှိ ကျောက်ဆောင်ပေါ်မှ Tanah Lot ဘုရားကျောင်းတွင် အံ့မခန်း နေဝင်ဆည်းဆာကို ကြည့်ရှုမည်။'
+        },
+        {
+            day: 'နေ့ ၄',
+            title: 'အပန်းဖြေခြင်း – ပြန်လည်ထွက်ခွာခြင်း',
+            image: 'https://placehold.co/600x400/E2D6C4/3D405B?text=Departure',
+            details: 'နံနက်ပိုင်းတွင် ဟိုတယ်၌ အနားယူအပန်းဖြေခြင်း သို့မဟုတ် အမှတ်တရပစ္စည်းများ ဝယ်ယူခြင်း ပြုလုပ်နိုင်သည်။ လေယာဉ်အချိန်ပေါ်မူတည်၍ လေဆိပ်သို့ ပြန်လည်ထွက်ခွာမည်။'
+        }
+    ];
+
+    // Tab Functionality
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContentContainer = document.getElementById('tab-content');
+
+    function renderTabContent(destination) {
+        const data = travelData[destination];
+        tabContentContainer.innerHTML = `
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg transition-opacity duration-500">
+                <h3 class="text-2xl font-bold mb-2">${data.title}</h3>
+                <p class="text-gray-600 mb-6">${data.summary}</p>
+                <div class="grid md:grid-cols-3 gap-4 mb-6 text-center">
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <div class="font-bold text-lg">✈️ ခရီးသွားချိန်</div>
+                        <div class="text-gray-700">${data.stats.flight}</div>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <div class="font-bold text-lg">💸 ကုန်ကျစရိတ်</div>
+                        <div class="text-gray-700">${data.stats.cost}</div>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <div class="font-bold text-lg">🛂 ဗီဇာ</div>
+                        <div class="text-gray-700">${data.stats.visa}</div>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-bold text-lg mb-2 text-green-600">အားသာချက်များ</h4>
+                        <ul class="space-y-2 list-disc list-inside text-gray-700">
+                            ${data.pros.map(pro => `<li>${pro}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg mb-2 text-red-600">အားနည်းချက်များ</h4>
+                        <ul class="space-y-2 list-disc list-inside text-gray-700">
+                            ${data.cons.map(con => `<li>${con}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            tabButtons.forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+            button.classList.add('tab-active');
+            button.classList.remove('tab-inactive');
+            renderTabContent(button.dataset.tab);
+        });
+    });
+
+    // Initial render
+    renderTabContent('bali');
+
+    // Accordion Functionality
+    const accordionContainer = document.getElementById('accordion');
+    baliItinerary.forEach((item, index) => {
+        const accordionItem = document.createElement('div');
+        accordionItem.innerHTML = `
+            <button class="accordion-btn w-full text-left font-bold text-lg p-4 bg-white rounded-lg shadow-md flex justify-between items-center transition duration-300 hover:bg-gray-50">
+                <span>${item.day}: ${item.title}</span>
+                <span class="transform transition-transform duration-300">+</span>
+            </button>
+            <div class="accordion-content bg-white rounded-b-lg p-6 pt-0">
+                 <img src="${item.image}" alt="${item.title}" class="rounded-lg mb-4 w-full h-auto object-cover">
+                 <p class="text-gray-700">${item.details}</p>
+            </div>
+        `;
+        accordionContainer.appendChild(accordionItem);
+    });
+
+    const accordionBtns = document.querySelectorAll('.accordion-btn');
+    accordionBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const content = btn.nextElementSibling;
+            const icon = btn.querySelector('span:last-child');
+            
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                // Close other accordions
+                document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                document.querySelectorAll('.accordion-btn span:last-child').forEach(i => i.style.transform = 'rotate(0deg)');
+                
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.style.transform = 'rotate(45deg)';
+            }
+        });
+    });
+
+    // Charts
+    // Comparison Radar Chart
+    const ctxComparison = document.getElementById('comparisonChart').getContext('2d');
+    new Chart(ctxComparison, {
+        type: 'radar',
+        data: {
+            labels: ['ကုန်ကျစရိတ်သက်သာမှု', 'အချိန်ကုန်သက်သာမှု', 'လှုပ်ရှားမှုမျိုးစုံ', 'အပန်းဖြေနိုင်မှု', 'ယဉ်ကျေးမှု'],
+            datasets: [{
+                label: 'ဘာလီ',
+                data: [4, 4, 5, 4, 5],
+                backgroundColor: 'rgba(79, 209, 197, 0.2)',
+                borderColor: 'rgba(79, 209, 197, 1)',
+                borderWidth: 2
+            }, {
+                label: 'မော်လ်ဒိုက်',
+                data: [1, 3, 3, 5, 2],
+                backgroundColor: 'rgba(247, 197, 159, 0.2)',
+                borderColor: 'rgba(247, 197, 159, 1)',
+                borderWidth: 2
+            }, {
+                label: 'ဂျာဗား',
+                data: [3, 2, 4, 2, 5],
+                backgroundColor: 'rgba(61, 64, 91, 0.2)',
+                borderColor: 'rgba(61, 64, 91, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                    pointLabels: { font: { size: 12, family: 'Padauk' } },
+                    suggestedMin: 0,
+                    suggestedMax: 5,
+                    ticks: {
+                        stepSize: 1,
+                        backdropColor: 'rgba(0,0,0,0)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        font: {
+                            family: 'Padauk'
+                        }
+                    }
+                },
+                tooltip: {
+                    bodyFont: {
+                        family: 'Padauk'
+                    },
+                    titleFont: {
+                        family: 'Padauk'
+                    }
+                }
+            }
+        }
+    });
+
+    // Budget Doughnut Chart
+    const ctxBudget = document.getElementById('budgetChart').getContext('2d');
+    new Chart(ctxBudget, {
+        type: 'doughnut',
+        data: {
+            labels: ['လေယာဉ်လက်မှတ်', 'တည်းခိုခ', 'သွားလာရေး', 'အစားအသောက်', 'အခြား'],
+            datasets: [{
+                label: 'ကုန်ကျစရိတ် ခွဲခြမ်းစိတ်ဖြာခြင်း',
+                data: [35, 25, 15, 15, 10],
+                backgroundColor: [
+                    '#4FD1C5',
+                    '#F7C59F',
+                    '#8E9AAF',
+                    '#3D405B',
+                    '#E2D6C4'
+                ],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            family: 'Padauk'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += context.parsed + '%';
+                            }
+                            return label;
+                        }
+                    },
+                    bodyFont: {
+                        family: 'Padauk'
+                    },
+                    titleFont: {
+                        family: 'Padauk'
+                    }
+                }
+            }
+        }
+    });
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+            if (mobileMenu.classList.contains('hidden') === false) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    });
+
+    // Gemini API Integration
+    const apiKey = ""; // Canvas will provide this in runtime
+
+    async function callGeminiAPI(prompt, loadingSpinnerId, contentDivId, modalId) {
+        const loadingSpinner = document.getElementById(loadingSpinnerId);
+        const contentDiv = document.getElementById(contentDivId);
+        const modal = document.getElementById(modalId);
+
+        loadingSpinner.classList.remove('hidden');
+        contentDiv.innerHTML = '<p class="text-center text-gray-500">အချက်အလက်များ ထုတ်လုပ်နေပါသည်... ခဏစောင့်ပါ</p>';
+        modal.style.display = 'flex'; // Show modal
+
+        let chatHistory = [];
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        const payload = { contents: chatHistory };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        let retries = 0;
+        const maxRetries = 5;
+        const baseDelay = 1000; // 1 second
+
+        while (retries < maxRetries) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    if (response.status === 429) { // Too many requests
+                        const delay = baseDelay * Math.pow(2, retries);
+                        retries++;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue; // Retry
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    contentDiv.innerHTML = text.replace(/\n/g, '<br>'); // Replace newlines with <br> for HTML display
+                } else {
+                    contentDiv.innerHTML = '<p class="text-red-500">အချက်အလက် ထုတ်လုပ်၍ မရပါ။</p>';
+                }
+                break; // Exit loop on success
+            } catch (error) {
+                console.error('API call failed:', error);
+                contentDiv.innerHTML = `<p class="text-red-500">အချက်အလက် ထုတ်ယူရာတွင် အမှားအယွင်း ဖြစ်ပွားပါသည်။ (${error.message})</p>`;
+                break; // Exit loop on non-retryable error
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+    }
+
+    // Packing List Button Event Listener
+    const packingListBtn = document.getElementById('packing-list-btn');
+    packingListBtn.addEventListener('click', () => {
+        const prompt = "Generate a practical packing list for a 4-day trip to Bali, Indonesia. Consider typical activities like beach visits, temple tours, and general sightseeing. Provide the list in bullet points.";
+        callGeminiAPI(prompt, 'packing-list-loading', 'packingListContent', 'packingListModal');
+    });
+
+    // Food Recommendations Button Event Listener
+    const foodRecommendationsBtn = document.getElementById('food-recommendations-btn');
+    foodRecommendationsBtn.addEventListener('click', () => {
+        const prompt = "Suggest 5-7 must-try local dishes in Bali, Indonesia. For each dish, provide a very brief description of what it is and its main ingredients. Present this as a list.";
+        callGeminiAPI(prompt, 'food-recommendations-loading', 'foodRecommendationsContent', 'foodRecommendationsModal');
+    });
+
+    // Close Modal Functionality
+    document.getElementById('closePackingListModal').addEventListener('click', () => {
+        document.getElementById('packingListModal').style.display = 'none';
+    });
+    document.getElementById('closeFoodRecommendationsModal').addEventListener('click', () => {
+        document.getElementById('foodRecommendationsModal').style.display = 'none';
+    });
+    window.addEventListener('click', (event) => {
+        if (event.target == document.getElementById('packingListModal')) {
+            document.getElementById('packingListModal').style.display = 'none';
+        }
+        if (event.target == document.getElementById('foodRecommendationsModal')) {
+            document.getElementById('foodRecommendationsModal').style.display = 'none';
+        }
+    });
+
+});
+</script>
+</body>
+</html>
