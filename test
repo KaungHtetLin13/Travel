@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>၄ ရက်တာ ခရီးစဉ် နှိုင်းယှဉ်ချက် - Maldives, Java, or Bali?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA uses a dashboard-style, comparative structure. It starts with a clear recommendation (hero section), followed by a three-column layout for side-by-side comparison of key factors (flight time, budget, pros/cons). This is more intuitive for decision-making than a linear report. Finally, it presents an interactive, tabbed itinerary for the recommended destination (Bali). This structure was chosen to directly facilitate comparison and help the user quickly identify the best option based on their priorities. -->
+    <!-- Visualization & Content Choices: Flight time and budget are visualized using Chart.js bar charts for instant comparison (Goal: Compare). Pros/Cons are in collapsible accordions to save space and reduce cognitive load (Goal: Inform/Organize). Destination appeal is shown with icons and keywords for a quick visual summary (Goal: Inform). The Bali itinerary uses a tabbed interface for a clean, organized presentation of a multi-day plan (Goal: Organize/Guide). A new LLM-powered feature allows users to get customized itinerary suggestions for each day based on their preferences (Goal: Enhance/Personalize). This approach ensures data is easy to digest and interact with. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Padauk', sans-serif;
+            background-color: #FDFBF8; /* Light warm neutral */
+            color: #4B4B4B;
+        }
+        .nav-button.active {
+            background-color: #008080; /* Teal */
+            color: white;
+            border-color: #008080;
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 160px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .destination-card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .destination-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-button.active {
+            border-bottom-color: #008080;
+            color: #008080;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-teal-700">သင်၏ ၄ ရက်တာ ခရီးစဉ်</h1>
+            <div class="flex space-x-4">
+                <a href="#comparison" class="nav-button text-gray-600 hover:text-teal-600">နှိုင်းယှဉ်ချက်</a>
+                <a href="#recommendation" class="nav-button text-gray-600 hover:text-teal-600">အကြံပြုချက်</a>
+                <a href="#itinerary" class="nav-button text-gray-600 hover:text-teal-600">ခရီးစဉ်အသေးစိတ်</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <section id="hero" class="text-center mb-16">
+            <h2 class="text-3xl md:text-5xl font-bold mb-4">သင်၏ အကောင်းဆုံး ၄ ရက်တာ အပန်းဖြေခရီးစဉ်ကို ရွေးချယ်ပါ</h2>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600 mb-8">
+                အချိန်တိုအတွင်း အကျိုးရှိစွာ အပန်းဖြေနိုင်ရန် Maldives, Java နှင့် Bali တို့၏ အားသာချက်၊ အားနည်းချက်များကို နှိုင်းယှဉ်လေ့လာပြီး သင့်အတွက် အသင့်တော်ဆုံး ခရီးစဉ်ကို ရွေးချယ်လိုက်ပါ။
+            </p>
+            <div id="recommendation" class="bg-teal-50 border-l-4 border-teal-500 text-teal-800 p-6 rounded-lg max-w-3xl mx-auto text-left shadow-lg">
+                <h3 class="text-2xl font-bold mb-2">အဓိက အကြံပြုချက်- ဘာလီ (Bali)</h3>
+                <p class="text-base">
+                    အချိန်တိုအတွင်း ခရီးသွားချိန်၊ ကုန်ကျစရိတ်နှင့် ရရှိနိုင်သော အတွေ့အကြုံမျိုးစုံကို ချိန်ဆကြည့်လျှင် **ဘာလီကျွန်း** သည် အသင့်တော်ဆုံး ရွေးချယ်မှု ဖြစ်ပါသည်။ လေယာဉ်ခရီးစဉ်တိုတောင်းခြင်း၊ ကုန်ကျစရိတ်သက်သာခြင်းနှင့် ယဉ်ကျေးမှု၊ သဘာဝအလှတရား၊ စိတ်အပန်းဖြေမှုတို့ကို တစ်နေရာတည်းတွင် စုံလင်စွာ ခံစားနိုင်ခြင်းတို့ကြောင့် သင်၏ ၄ ရက်တာ ခရီးစဉ်ကို အပြည့်အဝ အကျိုးရှိစေမည်ဖြစ်သည်။
+                </p>
+            </div>
+        </section>
+
+        <section id="comparison" class="mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">ခရီးစဉ်များအား ဘေးချင်းယှဉ် နှိုင်းယှဉ်လေ့လာခြင်း</h2>
+                <p class="text-lg text-gray-600 mt-2">အဓိကအချက်များပေါ်မူတည်၍ သင့်အတွက် အကောင်းဆုံးခရီးစဉ်ကို ဆုံးဖြတ်ပါ။</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <section id="itinerary">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold">အကြံပြုထားသော ၄ ရက်တာ ဘာလီခရီးစဉ်</h2>
+                <p class="text-lg text-gray-600 mt-2">ဤခရီးစဉ်သည် ယဉ်ကျေးမှု၊ သဘာဝအလှနှင့် အပန်းဖြေခြင်းတို့ကို ဟန်ချက်ညီညီ ပေါင်းစပ်ပေးထားပါသည်။</p>
+            </div>
+            <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-8">
+                <div class="border-b border-gray-200 mb-4">
+                    <nav class="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
+                    </nav>
+                </div>
+                <div id="itinerary-content">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p>&copy; 2025 Travel Planner. All information is based on the provided report.</p>
+        </div>
+    </footer>
+
+    <script>
+        const destinationData = [
+            {
+                name: 'Maldives',
+                appeal: 'ဇိမ်ခံအပန်းဖြေမှု & ပင်လယ်ရေအောက်အလှ',
+                flightTime: 4.5,
+                budget: [1200, 3000],
+                icons: ['💎', '🏝️', '🐠', '❤️'],
+                pros: [
+                    'အထူးသီးသန့်ဖြစ်ပြီး ဇိမ်ခံ Overwater Villas များ',
+                    'ကမ္ဘာ့အဆင့်မီ Snorkeling နှင့် Diving',
+                    'စုံတွဲများအတွက် အလွန်သင့်တော်သော ကိုယ်ပိုင်သီးသန့်နေရာ',
+                    'အပြည့်အဝ အနားယူအပန်းဖြေရန် အဓိကထားသည်'
+                ],
+                cons: [
+                    'ကုန်ကျစရိတ် အလွန်များပြားသည်',
+                    'ဒေသခံယဉ်ကျေးမှုနှင့် ထိတွေ့မှုနည်းပါးသည်',
+                    'ကျွန်းတွင်းသွားလာရေး (Seaplane/Speedboat) စရိတ်ကြီးပြီး အချိန်ကုန်သည်',
+                    'ရေပြင်လှုပ်ရှားမှုမှလွဲ၍ အခြားလုပ်ဆောင်စရာ နည်းပါးသည်'
+                ]
+            },
+            {
+                name: 'Bali',
+                appeal: 'သက်ဝင်ရှင်သန်သော ယဉ်ကျေးမှု & မျိုးစုံသောရှုခင်းများ',
+                flightTime: 2.75,
+                budget: [150, 600],
+                icons: ['🕉️', '🌋', '🌾', '🧘'],
+                pros: [
+                    'ထူးခြားသော ယဉ်ကျေးမှုအတွေ့အကြုံများ',
+                    'လှုပ်ရှားမှုနှင့် ရှုခင်းအမျိုးအစား စုံလင်သည်',
+                    'ကုန်ကျစရိတ် အလွန်သက်သာသည်',
+                    'ခရီးသွားဝန်ဆောင်မှု အခြေခံအဆောက်အအုံ ကောင်းမွန်သည်'
+                ],
+                cons: [
+                    'လူစည်ကားသောနေရာများတွင် ယာဉ်ကြောပိတ်ဆို့မှုရှိနိုင်သည်',
+                    'အချို့နေရာများတွင် စီးပွားဆန်လွန်းသည်'
+                ]
+            },
+            {
+                name: 'Java',
+                appeal: 'စစ်မှန်သောယဉ်ကျေးမှု & မီးတောင်များ၏ခမ်းနားမှု',
+                flightTime: 2.25,
+                budget: [100, 300],
+                icons: ['🕌', '🏛️', '🌋', '🚂'],
+                pros: [
+                    'စစ်မှန်သော အင်ဒိုနီးရှားယဉ်ကျေးမှုကို ထိတွေ့နိုင်သည်',
+                    'UNESCO ကမ္ဘာ့အမွေအနှစ်နေရာများ (Borobudur, Prambanan)',
+                    'ရင်သပ်ရှုမောဖွယ် မီးတောင်ရှုခင်းများ',
+                    'ကျွန်းတွင်းသွားလာရန် ရထားလမ်းကွန်ရက် ကောင်းမွန်သည်'
+                ],
+                cons: [
+                    'ခရီးသွားဝန်ဆောင်မှု အခြေခံအဆောက်အအုံ Bali လောက် မကောင်းမွန်',
+                    'ကျွန်းကြီးမား၍ အတွင်းပိုင်းခရီးသွားချိန် ပိုကြာနိုင်သည်',
+                    'အချို့နေရာများတွင် အရက်သေစာရရှိရန် ခက်ခဲနိုင်သည်'
+                ]
+            }
+        ];
+
+        const itineraryData = [
+            {
+                day: 'Day 1',
+                title: 'ရောက်ရှိခြင်း & တောင်ပိုင်းအလှ (Uluwatu)',
+                details: [
+                    { icon: '✈️', text: 'လေဆိပ်မှ ဟိုတယ်သို့ သွားရောက်အခြေချခြင်း' },
+                    { icon: '🏛️', text: 'Uluwatu Temple တွင် နေဝင်ချိန်ရှုခင်းကြည့်ခြင်း' },
+                    { icon: '🔥', text: 'Kecak မီးတုတ်အကကို ကြည့်ရှုခံစားခြင်း' },
+                    { icon: '🦞', text: 'Jimbaran ပင်လယ်ကမ်းခြေတွင် ပင်လယ်စာညစာ သုံးဆောင်ခြင်း' }
+                ]
+            },
+            {
+                day: 'Day 2',
+                title: 'Ubud ၏ ယဉ်ကျေးမှုနှင့် သဘာဝအလှ',
+                details: [
+                    { icon: '🐒', text: 'Sacred Monkey Forest သို့ သွားရောက်လည်ပတ်ခြင်း' },
+                    { icon: '🎨', text: 'Ubud Art Market တွင် လက်မှုပစ္စည်းများ ဝယ်ယူခြင်း' },
+                    { icon: '🌾', text: 'Tegalalang စပါးခင်းလှေကားများ၏ အလှကို ခံစားခြင်း' },
+                    { icon: '💧', text: 'Tirta Empul ဘုရားကျောင်းတွင် ရေသန့်စင်မှုပြုလုပ်ခြင်း' }
+                ]
+            },
+            {
+                day: 'Day 3',
+                title: 'ဘုရားကျောင်းများ၊ ရေကန်များနှင့် နာမည်ကြီးတံခါးများ',
+                details: [
+                    { icon: 'ക്ഷേ', text: 'Ulun Danu Beratan Temple သို့ သွားရောက်ခြင်း' },
+                    { icon: '⛩️', text: 'Handara Iconic Gate တွင် ဓာတ်ပုံရိုက်ခြင်း' },
+                    { icon: '🌅', text: 'Tanah Lot Temple တွင် နေဝင်ချိန်ရှုခင်းကြည့်ခြင်း' },
+                    { icon: '🌄', text: 'Wanagiri Hidden Hill မှ ရှုခင်းများခံစားခြင်း' }
+                ]
+            },
+            {
+                day: 'Day 4',
+                title: 'အပန်းဖြေခြင်း & ပြန်လည်ထွက်ခွာခြင်း',
+                details: [
+                    { icon: '🏊', text: 'ဟိုတယ်တွင် အနားယူအပန်းဖြေခြင်း' },
+                    { icon: '🛍️', text: 'နောက်ဆုံးလက်ကျန် အမှတ်တရပစ္စည်းများ ဝယ်ယူခြင်း' },
+                    { icon: '🛫', text: 'လေဆိပ်သို့ သွားရောက်၍ ပြန်လည်ထွက်ခွာခြင်း' }
+                ]
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const comparisonContainer = document.querySelector('#comparison .grid');
+            const itineraryTabsContainer = document.querySelector('#itinerary nav');
+            const itineraryContentContainer = document.querySelector('#itinerary-content');
+
+            const flightTimes = destinationData.map(d => d.flightTime);
+            const budgets = destinationData.map(d => d.budget[1]);
+            const labels = destinationData.map(d => d.name);
+
+            destinationData.forEach((dest, index) => {
+                const card = document.createElement('div');
+                card.className = 'destination-card flex flex-col p-6';
+                card.innerHTML = `
+                    <h3 class="text-2xl font-bold text-center mb-2 text-teal-700">${dest.name}</h3>
+                    <p class="text-center text-gray-500 mb-4 h-12">${dest.appeal}</p>
+                    <div class="flex justify-center space-x-3 text-2xl mb-6">
+                        ${dest.icons.map(icon => `<span>${icon}</span>`).join('')}
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold mb-2 text-center">✈️ ပျံသန်းချိန် (စင်ကာပူမှ)</h4>
+                        <div class="chart-container h-24"><canvas id="flightChart${index}"></canvas></div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold mb-2 text-center">💰 ၄ ရက်တာ ခန့်မှန်းကုန်ကျစရိတ် (SGD)</h4>
+                        <div class="chart-container h-24"><canvas id="budgetChart${index}"></canvas></div>
+                    </div>
+                    
+                    <div class="space-y-2 flex-grow">
+                        <div class="border-t pt-4">
+                            <button class="accordion-toggle w-full flex justify-between items-center font-bold text-lg">
+                                <span>အားသာချက်များ</span>
+                                <span class="transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="accordion-content">
+                                <ul class="list-disc list-inside mt-2 text-gray-600 pl-2 space-y-1">
+                                    ${dest.pros.map(pro => `<li>${pro}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="border-t pt-2">
+                             <button class="accordion-toggle w-full flex justify-between items-center font-bold text-lg">
+                                <span>အားနည်းချက်များ</span>
+                                <span class="transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="accordion-content">
+                                <ul class="list-disc list-inside mt-2 text-gray-600 pl-2 space-y-1">
+                                    ${dest.cons.map(con => `<li>${con}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                comparisonContainer.appendChild(card);
+                
+                createChart(`flightChart${index}`, 'bar', [dest.name], [dest.flightTime], 'နာရီ', '#38b2ac');
+                createChart(`budgetChart${index}`, 'bar', [dest.name], [dest.budget[1]], 'SGD', '#81e6d9');
+            });
+
+            itineraryData.forEach((item, index) => {
+                const tabButton = document.createElement('button');
+                tabButton.className = 'tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:border-gray-300 hover:text-gray-700';
+                tabButton.textContent = item.day;
+                tabButton.dataset.target = `day-${index}`;
+                if (index === 0) {
+                    tabButton.classList.add('active', 'border-teal-500', 'text-teal-600');
+                }
+                itineraryTabsContainer.appendChild(tabButton);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = `day-${index}`;
+                contentDiv.className = 'itinerary-pane';
+                if (index !== 0) {
+                    contentDiv.classList.add('hidden');
+                }
+                contentDiv.innerHTML = `
+                    <h3 class="text-2xl font-bold text-teal-700 mb-4">${item.title}</h3>
+                    <ul class="space-y-3">
+                        ${item.details.map(detail => `
+                            <li class="flex items-center">
+                                <span class="text-2xl mr-4">${detail.icon}</span>
+                                <span class="text-gray-700">${detail.text}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <button class="llm-suggest-toggle-btn w-full flex justify-between items-center font-bold text-lg text-teal-600 hover:text-teal-800">
+                            <span>✨ ဤနေ့အတွက် အကြံပြုချက် ရယူရန်</span>
+                            <span class="transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div class="llm-suggestion-area accordion-content mt-4 p-4 bg-teal-50 rounded-lg">
+                            <p class="mb-4 text-gray-700">ဤနေ့အတွက် သင်နှစ်သက်သော လှုပ်ရှားမှုအမျိုးအစားကို ရိုက်ထည့်ပါ။ ဥပမာ- "စွန့်စားခန်း", "အပန်းဖြေ", "ဒေသခံအစားအစာ"။</p>
+                            <input type="text" class="llm-preference-input w-full p-2 border border-gray-300 rounded-md mb-3 focus:ring-teal-500 focus:border-teal-500" placeholder="သင်၏ နှစ်သက်မှု (ဥပမာ: စွန့်စားခန်း)...">
+                            <button class="llm-generate-btn bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors duration-200">
+                                အကြံပြုချက် ထုတ်ပေးပါ
+                            </button>
+                            <div class="llm-loading-indicator hidden text-center mt-4 text-teal-600">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+                                <p class="mt-2">အကြံပြုချက်များ ထုတ်ပေးနေပါသည်...</p>
+                            </div>
+                            <div class="llm-output mt-4 p-3 bg-white border border-teal-200 rounded-md text-gray-800 hidden">
+                                <!-- LLM generated content will go here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                itineraryContentContainer.appendChild(contentDiv);
+            });
+
+            document.querySelectorAll('.accordion-toggle').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('span:last-child');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                        document.querySelectorAll('.accordion-toggle span:last-child').forEach(i => i.style.transform = 'rotate(0deg)');
+                        document.querySelectorAll('.llm-suggest-toggle-btn span:last-child').forEach(i => i.style.transform = 'rotate(0deg)'); // Also close LLM toggles
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.llm-suggest-toggle-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('span:last-child');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        document.querySelectorAll('.accordion-content').forEach(c => c.style.maxHeight = null);
+                        document.querySelectorAll('.accordion-toggle span:last-child').forEach(i => i.style.transform = 'rotate(0deg)');
+                        document.querySelectorAll('.llm-suggest-toggle-btn span:last-child').forEach(i => i.style.transform = 'rotate(0deg)'); // Also close other LLM toggles
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active', 'border-teal-500', 'text-teal-600'));
+                    button.classList.add('active', 'border-teal-500', 'text-teal-600');
+
+                    document.querySelectorAll('.itinerary-pane').forEach(pane => pane.classList.add('hidden'));
+                    document.getElementById(button.dataset.target).classList.remove('hidden');
+                });
+            });
+
+            document.querySelectorAll('.llm-generate-btn').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const parentArea = button.closest('.llm-suggestion-area');
+                    const input = parentArea.querySelector('.llm-preference-input');
+                    const loadingIndicator = parentArea.querySelector('.llm-loading-indicator');
+                    const outputDiv = parentArea.querySelector('.llm-output');
+
+                    const userPreference = input.value.trim();
+                    const currentDayElement = button.closest('.itinerary-pane');
+                    const currentDayIndex = Array.from(itineraryContentContainer.children).indexOf(currentDayElement);
+                    const currentDayData = itineraryData[currentDayIndex];
+
+                    if (!userPreference) {
+                        outputDiv.textContent = 'ကျေးဇူးပြု၍ သင်နှစ်သက်သော လှုပ်ရှားမှုအမျိုးအစားကို ရိုက်ထည့်ပါ။';
+                        outputDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    loadingIndicator.classList.remove('hidden');
+                    outputDiv.classList.add('hidden');
+                    outputDiv.textContent = ''; // Clear previous output
+
+                    const prompt = `For Day ${currentDayIndex + 1} of a Bali trip, which currently includes these activities: ${currentDayData.details.map(d => d.text).join(', ')}. Suggest 2-3 alternative activities focusing on "${userPreference}". Keep it concise and list them in Burmese with emojis.`;
+
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiKey = "";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                    let retries = 0;
+                    const maxRetries = 5;
+                    let delay = 1000; // 1 second
+
+                    while (retries < maxRetries) {
+                        try {
+                            const response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const result = await response.json();
+
+                            if (result.candidates && result.candidates.length > 0 &&
+                                result.candidates[0].content && result.candidates[0].content.parts &&
+                                result.candidates[0].content.parts.length > 0) {
+                                const text = result.candidates[0].content.parts[0].text;
+                                outputDiv.innerHTML = text.replace(/\n/g, '<br>'); // Display newlines as breaks
+                                outputDiv.classList.remove('hidden');
+                            } else {
+                                outputDiv.textContent = 'အကြံပြုချက်များ ထုတ်ပေးနိုင်ခြင်း မရှိပါ။';
+                                outputDiv.classList.remove('hidden');
+                            }
+                            break; // Exit loop on success
+                        } catch (error) {
+                            retries++;
+                            if (retries < maxRetries) {
+                                await new Promise(res => setTimeout(res, delay));
+                                delay *= 2; // Exponential backoff
+                            } else {
+                                outputDiv.textContent = `အကြံပြုချက်များ ထုတ်ပေးရာတွင် အမှားအယွင်း ဖြစ်ပွားခဲ့ပါသည်။: ${error.message}`;
+                                outputDiv.classList.remove('hidden');
+                            }
+                        } finally {
+                            loadingIndicator.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+        });
+
+        function createChart(canvasId, type, labels, data, unit, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `${unit}`,
+                        data: data,
+                        backgroundColor: color,
+                        borderColor: color,
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw} ${unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                font: {
+                                    family: "'Padauk', sans-serif"
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
